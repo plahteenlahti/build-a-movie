@@ -1,0 +1,9 @@
+python-dotenv
+joblib
+sqlalchemy
+psycopg2
+beautifulsoup4
+pandas
+numpy
+matplotlib
+scipy
