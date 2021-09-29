@@ -51,8 +51,14 @@ def add_bom_db():
         print('file exists, loading')
         df = pd.read_csv('titles.csv')
 
-    final = get_bom_result(df)
-    # TODO: add final as table on postgres db
+    final_exists = exists('final.csv')
+    if not final_exists:
+        final = get_bom_result(df)
+    else:
+        print('file exists, loading')
+        final = pd.read_csv('final.csv')
+    
+    final.to_sql(name='movie_boxoffice', con=connection, index=False)
 
 if __name__=="__main__":
     add_bom_db()
