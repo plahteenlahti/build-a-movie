@@ -3,11 +3,59 @@ import urllib.request
 import re
 import pandas as pd
 import numpy as np
+import unidecode
 
 """
 EXPOSED METHODS
 Public API methods
 """
+
+# Returns movie data of first (meaningful) result
+def get_first_search_data(titleName):
+    # mandatory in order to work
+    searchTitle = (titleName.replace(' ', '')).lower()
+    searchTitle = unidecode.unidecode(searchTitle)
+    searchTitle = ''.join(x for x in searchTitle if x.isalpha())
+
+    searchUrl = 'https://www.boxofficemojo.com/search/?q=' + searchTitle
+    soup = __fetch_htmldata(searchUrl)
+    complete_urls = __get_search_urls(soup)
+
+    movieData = pd.DataFrame(columns = ['title', 'worldwide_lifetime_gross',
+                                        'domestic_lifetime_gross', 'domestic_percent',
+                                        'foreign_lifetime_gross', 'foreign_percent',
+                                        'year','distributor',
+                                        'opening','budget',
+                                        'date','runtime','genres'])
+
+    # thresholds to stop the search if there are no results
+    counter = 0
+    failed = 0
+    for url in complete_urls:
+        if counter != 1 and failed <= 2:
+            soup = __fetch_htmldata(url)
+            try:
+                title, wlg, dlg, dp, flg, fp, year, dist, opening, budget, date, rtime, genres = __fetch_movie_search_data(soup)
+                movieData = movieData.append({'title' : title, 'worldwide_lifetime_gross' : wlg,
+                                'domestic_lifetime_gross' : dlg, 'domestic_percent' : dp,
+                                'foreign_lifetime_gross' : flg, 'foreign_percent' : fp,
+                                'year' : year, 'distributor' : dist , 'opening' : opening,
+                                'budget' : budget, 'date' : date, 'runtime' : rtime,
+                                'genres' : genres} , ignore_index=True)
+                counter += 1
+            except:
+                print('Missing data')
+                movieData = movieData.append({
+                                'title' : np.nan, 'worldwide_lifetime_gross' : np.nan,
+                                'domestic_lifetime_gross' : np.nan, 'domestic_percent' : np.nan,
+                                'foreign_lifetime_gross' : np.nan, 'foreign_percent' : np.nan,
+                                'year' : np.nan, 'distributor' : np.nan , 'opening' : np.nan,
+                                'budget' : np.nan, 'date' : np.nan, 'runtime' : np.nan,
+                                'genres' : np.nan} , ignore_index=True)
+                failed += 1
+
+    movieData = __clean_data(movieData)
+    return movieData
 
 # Returns movie data results given a query to the website
 def get_search_data(titleName):
@@ -48,6 +96,7 @@ def get_search_data(titleName):
 
     movieData = __clean_data(movieData)
     movieData.to_csv('downloaded/search_results.csv', index=False)
+    return movieData
 
 # Returns top 1000 selling movies data
 def get_bom_top_data():
@@ -233,4 +282,5 @@ def __clean_data(df):
 # Just to start
 if __name__=="__main__":
     #get_search_data('Harry Potter')
-    get_bom_top_data()
+    #get_bom_top_data()
+    get_first_search_data('fewfres')
