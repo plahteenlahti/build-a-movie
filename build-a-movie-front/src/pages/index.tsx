@@ -15,7 +15,7 @@ type Result = {
 
 type Query = [string, { query: string }];
 
-type Select = Array<{ value: string; label: string }>;
+type SelectFunction = Array<{ value: string; label: string }>;
 
 export default function Home() {
   const [actorQuery, setActorQuery] = useState("Leonardo");
@@ -35,7 +35,7 @@ export default function Home() {
   const { data: actorOptions, isLoading: isLoadingActors } = useQuery<
     Result,
     unknown,
-    Select,
+    SelectFunction,
     Query
   >(
     ["actors", { query: actorQuery }],
@@ -68,7 +68,7 @@ export default function Home() {
   const { data: directorOptions, isLoading: isLoadingDirectors } = useQuery<
     Result,
     unknown,
-    Select,
+    SelectFunction,
     Query
   >(
     ["actors", { query: actorQuery }],
