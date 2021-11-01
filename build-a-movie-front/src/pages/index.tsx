@@ -4,13 +4,24 @@ import { Footer } from "../components/Footer";
 import Select from "react-select";
 import { useQuery } from "react-query";
 import { useState } from "react";
+import {
+  useActors,
+  useBoxOfficePrediction,
+  useDirectors,
+  useGenres,
+  useRatingPrediction,
+} from "../hooks/queries";
 
-type Result = {
-  data: {
-    actors: {
-      name: string;
-    }[];
-  };
+type ResultActors = {
+  actors: {
+    name: string;
+  }[];
+};
+
+type ResultDirectors = {
+  directors: {
+    name: string;
+  }[];
 };
 
 type Query = [string, { query: string }];
@@ -18,105 +29,50 @@ type Query = [string, { query: string }];
 type SelectFunction = Array<{ value: string; label: string }>;
 
 export default function Home() {
-  const [actorQuery, setActorQuery] = useState("Leonardo");
+  const [actorQuery, setActorQuery] = useState("");
+  const [directorQuery, setDirectorQuery] = useState("");
+  const [budget, setBudget] = useState(1000000);
 
-  const { data: genreOptions, isLoading } = useQuery(
-    "genres",
-    async () => await (await fetch("/api/genres")).json(),
-    {
-      select: (data) =>
-        data.genres.map((genre) => ({
-          value: `${genre}`.toLowerCase(),
-          label: genre,
-        })),
-    }
-  );
+  const [directors, setDirectors] = useState<Array<string>>([
+    "Stanley Kubrick",
+  ]);
+  const [actors, setActors] = useState<Array<string>>(["Tom Cruise"]);
+  const [genres, setGenres] = useState<Array<string>>(["Horror"]);
 
-  const { data: actorOptions, isLoading: isLoadingActors } = useQuery<
-    Result,
-    unknown,
-    SelectFunction,
-    Query
-  >(
-    ["actors", { query: actorQuery }],
-    async ({ queryKey }) => {
-      const [_key, { query }] = queryKey;
+  const { data: genreOptions, isLoading } = useGenres();
+  const { data: actorOptions, isLoading: isLoadingActors } =
+    useActors(actorQuery);
+  const { data: directorOptions, isLoading: isLoadingDirectors } =
+    useDirectors(directorQuery);
 
-      const response = await fetch("/api/actors", {
-        method: "POST",
-        body: JSON.stringify({ query: query }),
-      });
+  const {
+    data: boxOffice,
+    refetch: getBoxOffice,
+    isLoading: loadingBoxOffice,
+  } = useBoxOfficePrediction({
+    budget,
+    directors,
+    actors,
+    genres,
+  });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+  const {
+    data: rating,
+    refetch: getRating,
+    isLoading: loadingRating,
+  } = useRatingPrediction({
+    budget,
+    directors,
+    actors,
+    genres,
+  });
 
-      const data = await response.json();
-      console.log("response", data);
-      return data;
-    },
-    {
-      select: ({ data }) =>
-        data.actors.map(({ name }) => ({
-          value: `${name}`.toLowerCase(),
-          label: name,
-        })),
-      enabled: false,
-    }
-  );
-
-  const { data: directorOptions, isLoading: isLoadingDirectors } = useQuery<
-    Result,
-    unknown,
-    SelectFunction,
-    Query
-  >(
-    ["actors", { query: actorQuery }],
-    async ({ queryKey }) => {
-      const [_key, { query }] = queryKey;
-
-      const response = await fetch("/api/directors", {
-        method: "POST",
-        body: JSON.stringify({ query: query }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      console.log("response", data);
-      return data;
-    },
-    {
-      select: ({ data }) =>
-        data.actors.map(({ name }) => ({
-          value: `${name}`.toLowerCase(),
-          label: name,
-        })),
-      enabled: false,
-    }
-  );
-
-  const getResult = async () => {
-    try {
-      const data = await fetch("http://167.172.109.147/predict-rating", {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({
-          people: ["Tom Cruise"],
-          genres: ["News"],
-          budget: 20000,
-        }),
-      });
-
-      const score = await data?.body;
-
-      console.log("response", score);
-    } catch (error) {
-      console.error(error);
-    }
+  const getResult = () => {
+    getBoxOffice();
+    getRating();
   };
+
+  console.log(loadingBoxOffice, loadingRating, rating, boxOffice);
 
   return (
     <div>
@@ -155,7 +111,7 @@ export default function Home() {
             </h1>
             <p className="max-w-3xl mx-auto mt-6 text-xl text-center text-red-100">
               Create the perfect movie by selecting the right actors, directors
-              etc...
+              and budget.
             </p>
           </div>
         </div>
@@ -168,6 +124,11 @@ export default function Home() {
             </div>
             <Select
               isMulti
+              defaultValue={[
+                { label: "Stanley Kubrick", value: "Stanley Kubrick" },
+              ]}
+              onInputChange={(value) => setDirectorQuery(value)}
+              onChange={(value) => setDirectors(value.map((v) => v.value))}
               options={directorOptions}
               isLoading={isLoadingDirectors}
             />
@@ -179,17 +140,25 @@ export default function Home() {
             </div>
             <Select
               isMulti
+              defaultValue={[{ label: "Tom Cruise", value: "Tom Cruise" }]}
+              onChange={(value) => setActors(value.map((v) => v.value))}
               onInputChange={(value) => setActorQuery(value)}
               isLoading={isLoadingActors}
               options={actorOptions}
             />
+          </div>
 
-            <div className="py-10">
-              <div className="mb-5">
-                <label className="font-bold text-white">Select genre(s)</label>
-              </div>
-              <Select isMulti options={genreOptions} isLoading={isLoading} />
+          <div className="py-10">
+            <div className="mb-5">
+              <label className="font-bold text-white">Select genre(s)</label>
             </div>
+            <Select
+              defaultValue={[{ label: "Horror", value: "Horror" }]}
+              onChange={(value) => setGenres(value.map((v) => v.value))}
+              isMulti
+              options={genreOptions}
+              isLoading={isLoading}
+            />
           </div>
 
           <div className="flex justify-center py-10">
@@ -200,6 +169,11 @@ export default function Home() {
             >
               Estimate score
             </button>
+          </div>
+
+          <div className="py-10 shadow">
+            <h3>{boxOffice}</h3>
+            <h3>{rating}</h3>
           </div>
         </div>
       </main>
