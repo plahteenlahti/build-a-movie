@@ -5,14 +5,20 @@ import Select from "react-select";
 import { useQuery } from "react-query";
 import { useState } from "react";
 
+type Result = {
+  data: {
+    actors: {
+      name: string;
+    }[];
+  };
+};
+
+type Query = [string, { query: string }];
+
+type Select = Array<{ value: string; label: string }>;
+
 export default function Home() {
   const [actorQuery, setActorQuery] = useState("Leonardo");
-
-  const options = [
-    { value: "chocolate", label: "Chocolate" },
-    { value: "strawberry", label: "Strawberry" },
-    { value: "vanilla", label: "Vanilla" },
-  ];
 
   const { data: genreOptions, isLoading } = useQuery(
     "genres",
@@ -26,7 +32,12 @@ export default function Home() {
     }
   );
 
-  const { data: actorOptions, isLoading: isLoadingActors } = useQuery(
+  const { data: actorOptions, isLoading: isLoadingActors } = useQuery<
+    Result,
+    unknown,
+    Select,
+    Query
+  >(
     ["actors", { query: actorQuery }],
     async ({ queryKey }) => {
       const [_key, { query }] = queryKey;
@@ -53,7 +64,37 @@ export default function Home() {
     }
   );
 
-  console.log(actorOptions, isLoadingActors);
+  const { data: directorOptions, isLoading: isLoadingDirectors } = useQuery<
+    Result,
+    unknown,
+    Select,
+    Query
+  >(
+    ["actors", { query: actorQuery }],
+    async ({ queryKey }) => {
+      const [_key, { query }] = queryKey;
+
+      const response = await fetch("/api/directors", {
+        method: "POST",
+        body: JSON.stringify({ query: query }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      console.log("response", data);
+      return data;
+    },
+    {
+      select: ({ data }) =>
+        data.actors.map(({ name }) => ({
+          value: `${name}`.toLowerCase(),
+          label: name,
+        })),
+    }
+  );
 
   return (
     <div>
@@ -72,30 +113,47 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="bg-gray-100">
-        <nav className="max-w-screen-lg mx-auto px-3 py-6"></nav>
-
-        <div className="max-w-screen-lg mx-auto px-3 pt-20 pb-32">
-          <header className="text-center">
-            <h1 className="text-5xl text-gray-900 font-bold whitespace-pre-line leading-hero">
-              Build-A-<span className="text-primary-500">Movie</span>
+      <main className="min-h-screen bg-gray-800">
+        <div className="relative bg-red-800">
+          <div className="absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="object-cover w-full h-full"
+              src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2970&q=800"
+              alt=""
+            />
+            <div
+              className="absolute inset-0 bg-red-800 mix-blend-multiply"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="relative px-4 py-24 mx-auto max-w-7xl sm:py-32 sm:px-6 lg:px-8">
+            <h1 className="text-4xl font-extrabold tracking-tight text-center text-white sm:text-5xl lg:text-6xl">
+              Build-A-Movie
             </h1>
-            <div className="text-2xl mt-4 mb-16">
+            <p className="max-w-3xl mx-auto mt-6 text-xl text-center text-red-100">
               Create the perfect movie by selecting the right actors, directors
               etc...
-            </div>
-          </header>
+            </p>
+          </div>
+        </div>
+        <nav className="max-w-screen-lg px-3 py-6 mx-auto"></nav>
 
+        <div className="max-w-screen-lg px-3 pt-20 pb-32 mx-auto">
           <div className="py-10">
             <div className="mb-5">
-              <label className="font-bold">Select director(s)</label>
+              <label className="font-bold text-white">Select director(s)</label>
             </div>
-            <Select isMulti options={options} isLoading={isLoading} />
+            <Select
+              isMulti
+              options={directorOptions}
+              isLoading={isLoadingDirectors}
+            />
           </div>
 
           <div className="py-10">
             <div className="mb-5">
-              <label className="font-bold">Select actor(s)</label>
+              <label className="font-bold text-white">Select actor(s)</label>
             </div>
             <Select
               isMulti
@@ -107,13 +165,11 @@ export default function Home() {
 
           <div className="py-10">
             <div className="mb-5">
-              <label className="font-bold">Select genre(s)</label>
+              <label className="font-bold text-white">Select genre(s)</label>
             </div>
             <Select isMulti options={genreOptions} isLoading={isLoading} />
           </div>
         </div>
-
-        <Footer />
       </main>
     </div>
   );
