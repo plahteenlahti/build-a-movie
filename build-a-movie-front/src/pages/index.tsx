@@ -191,7 +191,10 @@ export default function Home() {
                   and to make around:
                 </h2>
                 <h3 className="flex items-center justify-center mt-4 text-3xl font-extrabold text-white">
-                  {boxOffice}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(boxOffice)}
                 </h3>
               </div>
             )}
