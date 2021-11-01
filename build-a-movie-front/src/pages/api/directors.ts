@@ -10,12 +10,15 @@ async function fetchGraphQL(query: string) {
 }
 
 export default async function handler(req, res) {
-  const query = await req.body;
-  console.log(query.query);
+  const body = await req.body;
+  const query = JSON.parse(body);
+
   const result = await fetchGraphQL(`query {
-      directors(limit: 100, where: {name: {_ilike: "%${query.query ?? ""}%"}}) {
+      directors(limit: 100, where: {name: {_ilike: "%${
+        query.search ?? ""
+      }%"}}) {
         name
       }
     }`);
-  res.status(200).json({ ...result });
+  res.status(200).json({ ...result?.data });
 }
