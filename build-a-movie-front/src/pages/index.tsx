@@ -163,17 +163,41 @@ export default function Home() {
 
           <div className="flex justify-center py-10">
             <button
+              disabled={loadingBoxOffice || loadingRating}
               type="button"
               onClick={getResult}
               className="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
-              Estimate score
+              Estimate score and box office revenue
             </button>
           </div>
 
-          <div className="py-10 shadow">
-            <h3>{boxOffice}</h3>
-            <h3>{rating}</h3>
+          {loadingBoxOffice && loadingRating && (
+            <h2 className="flex items-center justify-center mt-4 text-4xl font-extrabold text-center text-gray-500">
+              Just a moment while we calculate the score and box office
+              revenue...
+            </h2>
+          )}
+          <div className="h-100">
+            {rating && boxOffice && (
+              <div className="p-5 mt-5 bg-gray-900 rounded-lg shadow-lg">
+                <h2 className="flex items-center justify-center mt-4 text-4xl font-extrabold text-center text-gray-500">
+                  We estimate your Movie to have:
+                </h2>
+                <h3 className="flex items-center justify-center mt-4 mb-4 text-3xl font-extrabold text-white">
+                  {rating} rating on IMDB
+                </h3>
+                <h2 className="flex items-center justify-center mt-4 text-4xl font-extrabold text-center text-gray-500">
+                  and to make around:
+                </h2>
+                <h3 className="flex items-center justify-center mt-4 text-3xl font-extrabold text-white">
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(boxOffice)}
+                </h3>
+              </div>
+            )}
           </div>
         </div>
       </main>

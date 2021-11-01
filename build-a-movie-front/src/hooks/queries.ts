@@ -88,7 +88,7 @@ export const useDirectors = (directorQuery: string) =>
   );
 
 type Prediction = {
-  prediction: number;
+  result: number;
 };
 
 type PredictionQuery = [
@@ -97,7 +97,7 @@ type PredictionQuery = [
 ];
 
 export const useRatingPrediction = ({ actors, directors, budget, genres }) =>
-  useQuery<Prediction, unknown, unknown, PredictionQuery>(
+  useQuery<Prediction, unknown, number, PredictionQuery>(
     ["rating", { actors, directors, budget, genres }],
     async ({ queryKey }) => {
       const [_key, { actors, directors, budget, genres }] = queryKey;
@@ -124,11 +124,13 @@ export const useRatingPrediction = ({ actors, directors, budget, genres }) =>
     },
     {
       enabled: false,
+
+      select: (data) => data?.result,
     }
   );
 
 export const useBoxOfficePrediction = ({ actors, directors, budget, genres }) =>
-  useQuery<ResultDirectors, unknown, unknown, PredictionQuery>(
+  useQuery<Prediction, unknown, number, PredictionQuery>(
     ["boxoffice", { actors, directors, budget, genres }],
     async ({ queryKey }) => {
       const [_key, { actors, directors, budget, genres }] = queryKey;
@@ -156,5 +158,6 @@ export const useBoxOfficePrediction = ({ actors, directors, budget, genres }) =>
     },
     {
       enabled: false,
+      select: (data) => data?.result,
     }
   );
