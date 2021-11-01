@@ -19,6 +19,8 @@ type SelectFunction = Array<{ value: string; label: string }>;
 
 export default function Home() {
   const [actorQuery, setActorQuery] = useState("Leonardo");
+  const [directorQuery, setDirectorQuery] = useState("Quentin");
+  const [score, setScore] = useState(0);
 
   const { data: genreOptions, isLoading } = useQuery(
     "genres",
@@ -103,6 +105,9 @@ export default function Home() {
       const data = await fetch("http://167.172.109.147/predict-rating", {
         method: "POST",
         mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           people: ["Tom Cruise"],
           genres: ["News"],
@@ -111,6 +116,19 @@ export default function Home() {
       });
 
       const score = await data?.body;
+
+      const wlg = await fetch("http://167.172.109.147/predict-wlg", {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          people: ["Tom Cruise"],
+          genres: ["News"],
+          budget: 20000,
+        }),
+      });
 
       console.log("response", score);
     } catch (error) {
