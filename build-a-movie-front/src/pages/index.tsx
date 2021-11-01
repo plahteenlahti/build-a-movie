@@ -61,6 +61,7 @@ export default function Home() {
           value: `${name}`.toLowerCase(),
           label: name,
         })),
+      enabled: false,
     }
   );
 
@@ -93,8 +94,29 @@ export default function Home() {
           value: `${name}`.toLowerCase(),
           label: name,
         })),
+      enabled: false,
     }
   );
+
+  const getResult = async () => {
+    try {
+      const data = await fetch("http://167.172.109.147/predict-rating", {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+          people: ["Tom Cruise"],
+          genres: ["News"],
+          budget: 20000,
+        }),
+      });
+
+      const score = await data?.body;
+
+      console.log("response", score);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div>
@@ -161,13 +183,23 @@ export default function Home() {
               isLoading={isLoadingActors}
               options={actorOptions}
             />
+
+            <div className="py-10">
+              <div className="mb-5">
+                <label className="font-bold text-white">Select genre(s)</label>
+              </div>
+              <Select isMulti options={genreOptions} isLoading={isLoading} />
+            </div>
           </div>
 
-          <div className="py-10">
-            <div className="mb-5">
-              <label className="font-bold text-white">Select genre(s)</label>
-            </div>
-            <Select isMulti options={genreOptions} isLoading={isLoading} />
+          <div className="flex justify-center py-10">
+            <button
+              type="button"
+              onClick={getResult}
+              className="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Estimate score
+            </button>
           </div>
         </div>
       </main>
